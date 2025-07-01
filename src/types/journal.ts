@@ -1,5 +1,6 @@
 export interface JournalEntry {
   id: string;
+  user_id: string;
   text: string;
   summary: string;
   sentiment: string;

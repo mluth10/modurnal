@@ -3,50 +3,90 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import 'react-native-url-polyfill/auto';
 
-import { SupabaseProvider } from './src/contexts/SupabaseContext';
+import { SupabaseProvider, useSupabase } from './src/contexts/SupabaseContext';
 import HomeScreen from './src/screens/HomeScreen';
 import NewEntryScreen from './src/screens/NewEntryScreen';
+import { SpotifyAuthScreen } from './src/screens/SpotifyAuthScreen';
 
 export type RootStackParamList = {
   Home: undefined;
   NewEntry: undefined;
+  SpotifyAuth: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
 
-export default function App() {
+const NavigationContent = () => {
+  const { user, loading } = useSupabase();
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#1DB954" />
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaProvider>
-      <SupabaseProvider>
-        <NavigationContainer>
-          <Stack.Navigator
-            initialRouteName="Home"
-            screenOptions={{
-              headerStyle: {
-                backgroundColor: '#f8f9fa',
-              },
-              headerTintColor: '#333',
-              headerTitleStyle: {
-                fontWeight: 'bold',
-              },
-            }}
-          >
+    <NavigationContainer>
+      <Stack.Navigator
+        initialRouteName={user ? "Home" : "SpotifyAuth"}
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: '#f8f9fa',
+          },
+          headerTintColor: '#333',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
+      >
+        {user ? (
+          // Authenticated stack
+          <>
             <Stack.Screen 
               name="Home" 
               component={HomeScreen} 
-              options={{ title: 'Modurnal' }}
+              options={{ headerShown: false }}
             />
             <Stack.Screen 
               name="NewEntry" 
               component={NewEntryScreen} 
               options={{ title: 'New Entry' }}
             />
-          </Stack.Navigator>
-        </NavigationContainer>
-        <StatusBar style="auto" />
+          </>
+        ) : (
+          // Authentication stack
+          <Stack.Screen 
+            name="SpotifyAuth" 
+            component={SpotifyAuthScreen} 
+            options={{ headerShown: false }}
+          />
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <SupabaseProvider>
+        <NavigationContent />
+        <StatusBar style="light" />
       </SupabaseProvider>
     </SafeAreaProvider>
   );
-} 
+}
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#121212',
+  },
+}); 
