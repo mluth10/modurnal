@@ -65,3 +65,4 @@ react-native.config.js
 
 # Flipper
 ios/Pods/ 
+package-lock.json
