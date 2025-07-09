@@ -4,6 +4,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { PaperProvider } from 'react-native-paper';
+import { theme } from './src/theme';
 import 'react-native-url-polyfill/auto';
 
 import { SupabaseProvider, useSupabase } from './src/contexts/SupabaseContext';
@@ -47,22 +49,22 @@ const NavigationContent = () => {
         {user ? (
           // Authenticated stack
           <>
-            <Stack.Screen 
-              name="Home" 
-              component={HomeScreen} 
+            <Stack.Screen
+              name="Home"
+              component={HomeScreen}
               options={{ headerShown: false }}
             />
-            <Stack.Screen 
-              name="NewEntry" 
-              component={NewEntryScreen} 
+            <Stack.Screen
+              name="NewEntry"
+              component={NewEntryScreen}
               options={{ title: 'New Entry' }}
             />
           </>
         ) : (
           // Authentication stack
-          <Stack.Screen 
-            name="SpotifyAuth" 
-            component={SpotifyAuthScreen} 
+          <Stack.Screen
+            name="SpotifyAuth"
+            component={SpotifyAuthScreen}
             options={{ headerShown: false }}
           />
         )}
@@ -73,12 +75,14 @@ const NavigationContent = () => {
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <SupabaseProvider>
-        <NavigationContent />
-        <StatusBar style="light" />
-      </SupabaseProvider>
-    </SafeAreaProvider>
+    <PaperProvider theme={theme}>
+      <SafeAreaProvider>
+        <SupabaseProvider>
+          <NavigationContent />
+          <StatusBar style="light" />
+        </SupabaseProvider>
+      </SafeAreaProvider>
+    </PaperProvider>
   );
 }
 
