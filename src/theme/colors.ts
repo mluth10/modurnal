@@ -1,64 +1,45 @@
 // Custom color palette for the app
+// use https://colorwind.dev/app for color palette
 export const lightColors = {
-  // Brand colors
-  brandPrimary: '#663399', // Purple
-  brandSecondary: '#665A6F', // Muted purple
-  brandTertiary: '#805158', // Muted red
-  
-  // Custom accent colors
-  accent: '#FF6B6B',
-  accentLight: '#FF8E8E',
-  accentDark: '#E55555',
-  
-  // Custom surface colors
-  surfaceLight: '#F8F9FA',
-  surfaceMedium: '#E9ECEF',
-  surfaceDark: '#DEE2E6',
-  
-  // Custom text colors
-  textPrimary: '#212529',
-  textSecondary: '#6C757D',
-  textTertiary: '#ADB5BD',
-  
-  // Custom status colors
-  success: '#28A745',
-  warning: '#FFC107',
-  info: '#17A2B8',
-  
-  // Custom background colors
-  backgroundLight: '#FFFFFF',
-  backgroundMedium: '#F8F9FA',
-  backgroundDark: '#E9ECEF',
+  background: '#DCE0D9',
+  backgroundSecondary: '#F8FAFC',
+  backgroundMuted: '#F1F5F9',
+  foreground: '#1E293B',
+  foregroundSecondary: '#334155',
+  foregroundMuted: '#64748B',
+  card: '#FFFFFF',
+  cardForeground: '#1E293B',
+  border: '#E2E8F0',
+  input: '#F1F5F9',
+  ring: '#3B82F6',
+  primary: '#306B34',
+  primaryForeground: '#FFFFFF',
+  secondary: '#BE6E46',
+  secondaryForeground: '#1E293B',
+  success: '#10B981',
+  warning: '#F59E0B',
+  error: '#EF4444',
+  info: '#3B82F6'
 };
 
 export const darkColors = {
-  // Brand colors (adjusted for dark mode)
-  brandPrimary: '#8B5CF6', // Lighter purple for dark mode
-  brandSecondary: '#A78BFA', // Lighter muted purple
-  brandTertiary: '#F87171', // Lighter muted red
-  
-  // Custom accent colors
-  accent: '#FF6B6B',
-  accentLight: '#FF8E8E',
-  accentDark: '#E55555',
-  
-  // Custom surface colors
-  surfaceLight: '#2D3748',
-  surfaceMedium: '#1A202C',
-  surfaceDark: '#171923',
-  
-  // Custom text colors
-  textPrimary: '#F7FAFC',
-  textSecondary: '#A0AEC0',
-  textTertiary: '#718096',
-  
-  // Custom status colors
-  success: '#48BB78',
-  warning: '#ECC94B',
-  info: '#4299E1',
-  
-  // Custom background colors
-  backgroundLight: '#1A202C',
-  backgroundMedium: '#171923',
-  backgroundDark: '#0F1419',
+  background: '#111827',
+  backgroundSecondary: '#1F2937',
+  backgroundMuted: '#064E3B',
+  foreground: '#F9FAFB',
+  foregroundSecondary: '#E5E7EB',
+  foregroundMuted: '#9CA3AF',
+  card: '#1F2937',
+  cardForeground: '#F9FAFB',
+  border: '#374151',
+  input: '#4B5563',
+  ring: '#34D399',
+  primary: '#34D399',
+  primaryForeground: '#111827',
+  secondary: '#4B5563',
+  secondaryForeground: '#F9FAFB',
+  success: '#22C55E',
+  warning: '#EAB308',
+  error: '#EF4444',
+  info: '#34D399',
 }; 

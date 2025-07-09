@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
-  TouchableOpacity,
   StyleSheet,
   Alert,
   ActivityIndicator,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useSupabase } from '../contexts/SupabaseContext';
-
+import { useTheme, Button, Text } from 'react-native-paper';
+import { AppTheme } from '../theme';
 interface SpotifyAuthScreenProps {
   navigation: any;
 }
@@ -20,11 +18,14 @@ export const SpotifyAuthScreen: React.FC<SpotifyAuthScreenProps> = ({ navigation
   const [loading, setLoading] = useState(false);
   const { signInWithSpotify } = useSupabase();
 
+  const theme = useTheme() as AppTheme;
+  const styles = createStyles(theme);
+
   const handleSpotifySignIn = async () => {
     setLoading(true);
     try {
       const { error } = await signInWithSpotify();
-      
+
       if (error) {
         Alert.alert('Sign In Error', error.message);
       }
@@ -40,43 +41,36 @@ export const SpotifyAuthScreen: React.FC<SpotifyAuthScreenProps> = ({ navigation
       <View style={styles.content}>
         {/* App Logo/Icon */}
         <View style={styles.logoContainer}>
-          <Ionicons name="journal" size={80} color="#1DB954" />
+          <Ionicons name="journal" size={80} color={theme.colors.primary} />
           <Text style={styles.appName}>Modurnal</Text>
-          <Text style={styles.tagline}>Your AI-Powered Journal</Text>
+          <Text style={styles.tagline}>stuid fucking app</Text>
         </View>
 
         {/* Features */}
         <View style={styles.featuresContainer}>
           <View style={styles.feature}>
-            <Ionicons name="bulb" size={24} color="#1DB954" />
-            <Text style={styles.featureText}>AI-powered insights</Text>
+            <Ionicons name="bulb" size={24} color={theme.colors.secondary} />
+            <Text style={styles.featureText}>AI-powered cringe</Text>
           </View>
           <View style={styles.feature}>
-            <Ionicons name="trending-up" size={24} color="#1DB954" />
+            <Ionicons name="trending-up" size={24} color={theme.colors.secondary} />
             <Text style={styles.featureText}>Track your mood</Text>
           </View>
           <View style={styles.feature}>
-            <Ionicons name="shield-checkmark" size={24} color="#1DB954" />
+            <Ionicons name="shield-checkmark" size={24} color={theme.colors.secondary} />
             <Text style={styles.featureText}>Secure & private</Text>
           </View>
         </View>
 
         {/* Spotify Sign In Button */}
         <View style={styles.authContainer}>
-          <TouchableOpacity
-            style={[styles.spotifyButton, loading && styles.buttonDisabled]}
-            onPress={handleSpotifySignIn}
-            disabled={loading}
-          >
+          <Button mode="contained" onPress={handleSpotifySignIn} disabled={loading} style={styles.spotifyButton}>
             {loading ? (
               <ActivityIndicator color="#ffffff" size="small" />
             ) : (
-              <>
-                <Ionicons name="musical-notes" size={24} color="#ffffff" />
-                <Text style={styles.spotifyButtonText}>Sign in with Spotify</Text>
-              </>
+              <Text style={styles.spotifyButtonText}>Sign in with Spotify</Text>
             )}
-          </TouchableOpacity>
+          </Button>
 
           <Text style={styles.termsText}>
             By signing in, you agree to our Terms of Service and Privacy Policy
@@ -94,10 +88,10 @@ export const SpotifyAuthScreen: React.FC<SpotifyAuthScreenProps> = ({ navigation
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: theme.colors.background,
   },
   content: {
     flex: 1,
@@ -112,12 +106,12 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 36,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: theme.colors.primary,
     marginTop: 16,
   },
   tagline: {
     fontSize: 16,
-    color: '#b3b3b3',
+    color: theme.colors.foregroundMuted,
     marginTop: 8,
   },
   featuresContainer: {
@@ -131,7 +125,7 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 16,
-    color: '#ffffff',
+    color: theme.colors.foregroundMuted,
     marginLeft: 16,
     fontWeight: '500',
   },
@@ -140,7 +134,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   spotifyButton: {
-    backgroundColor: '#1DB954',
+    backgroundColor: theme.colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -148,14 +142,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     borderRadius: 50,
     minWidth: 280,
-    shadowColor: '#1DB954',
+    shadowColor: theme.colors.primary,
     shadowOffset: {
       width: 0,
       height: 4,
     },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 8,
   },
   buttonDisabled: {
     backgroundColor: '#666',
@@ -163,13 +156,13 @@ const styles = StyleSheet.create({
   },
   spotifyButtonText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: '600',
     marginLeft: 12,
   },
   termsText: {
     fontSize: 12,
-    color: '#b3b3b3',
+    color: theme.colors.foregroundMuted,
     textAlign: 'center',
     marginTop: 16,
     paddingHorizontal: 20,
@@ -183,4 +176,4 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
-}); 
+});
