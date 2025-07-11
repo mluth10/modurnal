@@ -1,38 +1,29 @@
 #!/bin/bash
 
-echo "🚀 Setting up Modurnal - AI-Powered Journaling App"
-echo "=================================================="
+echo "Setting up Modurnal..."
 
 # Check if .env file exists
 if [ ! -f .env ]; then
-    echo "📝 Creating .env file from template..."
+    echo "Creating .env file from example..."
     cp env.example .env
-    echo "✅ .env file created!"
-    echo ""
-    echo "⚠️  IMPORTANT: Please update .env with your actual API keys:"
-    echo "   - EXPO_PUBLIC_SUPABASE_URL"
-    echo "   - EXPO_PUBLIC_SUPABASE_ANON_KEY"
-    echo "   - EXPO_PUBLIC_OPENAI_API_KEY"
-    echo ""
-else
-    echo "✅ .env file already exists"
+    echo "Please update .env with your actual credentials"
 fi
 
-# Check if node_modules exists
-if [ ! -d "node_modules" ]; then
-    echo "📦 Installing dependencies..."
-    npm install
-    echo "✅ Dependencies installed!"
-else
-    echo "✅ Dependencies already installed"
-fi
+# Install dependencies
+echo "Installing dependencies..."
+npm install
 
+# Run database migration
+echo "Setting up database schema..."
+echo "Please run the following SQL in your Supabase SQL editor:"
 echo ""
-echo "🎉 Setup complete!"
+echo "Copy and paste the contents of supabase/schema.sql into your Supabase SQL editor and run it."
+echo ""
+
+echo "Setup complete!"
 echo ""
 echo "Next steps:"
-echo "1. Update .env with your API keys"
-echo "2. Set up your Supabase database using supabase/schema.sql"
-echo "3. Run 'npm start' to start the development server"
-echo ""
-echo "For detailed instructions, see README.md" 
+echo "1. Update .env with your Supabase and OpenAI credentials"
+echo "2. Run the SQL schema in your Supabase project"
+echo "3. Configure Spotify OAuth in your Supabase project"
+echo "4. Run 'npm start' to start the development server" 

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
@@ -12,7 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
-
+import { useTheme, Button, Text } from 'react-native-paper';
+import { AppTheme } from '../theme';
 import { RootStackParamList } from '../../App';
 import { useSupabase } from '../contexts/SupabaseContext';
 import { JournalService } from '../services/journal';
@@ -31,6 +31,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [loadingEntries, setLoadingEntries] = useState(false);
   const [spotifyProfile, setSpotifyProfile] = useState<any>(null);
   const [loadingSpotify, setLoadingSpotify] = useState(false);
+  const theme = useTheme() as AppTheme;
+  const styles = createStyles(theme);
 
   useEffect(() => {
     if (supabase && !loading && user) {
@@ -144,6 +146,38 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           {item.summary}
         </Text>
       )}
+      
+      {/* Spotify Data Section */}
+      {item.spotify_data && item.spotify_data.total_tracks_played > 0 && (
+        <View style={styles.spotifyDataSection}>
+          <View style={styles.spotifyDataHeader}>
+            <Ionicons name="musical-notes-outline" size={16} color="#1DB954" />
+            <Text style={styles.spotifyDataTitle}>Listening Data</Text>
+          </View>
+          <View style={styles.spotifyStats}>
+            <View style={styles.spotifyStat}>
+              <Text style={styles.spotifyStatValue}>{item.spotify_data.total_tracks_played}</Text>
+              <Text style={styles.spotifyStatLabel}>Tracks</Text>
+            </View>
+            <View style={styles.spotifyStat}>
+              <Text style={styles.spotifyStatValue}>
+                {Math.round(item.spotify_data.total_minutes_listened / 60)}h {item.spotify_data.total_minutes_listened % 60}m
+              </Text>
+              <Text style={styles.spotifyStatLabel}>Listened</Text>
+            </View>
+          </View>
+          {item.spotify_data.top_tracks && item.spotify_data.top_tracks.length > 0 && (
+            <View style={styles.topTracksPreview}>
+              <Text style={styles.topTracksTitle}>Top Tracks:</Text>
+              {item.spotify_data.top_tracks.slice(0, 2).map((track, index) => (
+                <Text key={track.id} style={styles.trackPreview}>
+                  {index + 1}. {track.name} - {track.artist}
+                </Text>
+              ))}
+            </View>
+          )}
+        </View>
+      )}
     </View>
   );
 
@@ -157,10 +191,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.header}>
+      <View style={styles.header}>
           <View style={styles.userInfo}>
-            <Ionicons name="person-circle" size={40} color="#1DB954" />
             <View style={styles.userText}>
               <Text style={styles.userName}>{getUserDisplayName()}</Text>
               <Text style={styles.userEmail}>{user?.email}</Text>
@@ -170,8 +202,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             <Ionicons name="log-out-outline" size={24} color="#666" />
           </TouchableOpacity>
         </View>
-
-        {spotifyTokens?.accessToken && (
+      <ScrollView style={styles.scrollView}>
+        {/* {spotifyTokens?.accessToken && (
           <View style={styles.spotifySection}>
             <Text style={styles.sectionTitle}>Spotify Profile</Text>
             {loadingSpotify ? (
@@ -190,7 +222,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               <Text style={styles.noData}>No Spotify profile data</Text>
             )}
           </View>
-        )}
+        )} */}
 
         <View style={styles.entriesSection}>
           <View style={styles.entriesHeader}>
@@ -228,10 +260,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: theme.colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -239,7 +271,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.background,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
@@ -401,6 +433,55 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 20,
+  },
+  spotifyDataSection: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  spotifyDataHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  spotifyDataTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginLeft: 8,
+  },
+  spotifyStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 12,
+  },
+  spotifyStat: {
+    alignItems: 'center',
+  },
+  spotifyStatValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1DB954',
+  },
+  spotifyStatLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+  },
+  topTracksPreview: {
+    marginTop: 8,
+  },
+  topTracksTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  trackPreview: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 4,
   },
 });
 

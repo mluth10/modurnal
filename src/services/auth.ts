@@ -11,7 +11,8 @@ export class AuthService {
     const { data, error } = await this.supabase.auth.signInWithOAuth({
       provider: 'spotify',
       options: {
-        redirectTo: redirectUri
+        redirectTo: redirectUri,
+        scopes: 'user-read-private user-read-email user-top-read user-read-recently-played user-read-playback-state user-read-currently-playing'
       },
     });
 

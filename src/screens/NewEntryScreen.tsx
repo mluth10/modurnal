@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../App';
 import { useSupabase } from '../contexts/SupabaseContext';
 import { JournalService } from '../services/journal';
+import { SpotifyListeningData } from '../types/journal';
+import { SpotifyService } from '../services/spotify';
 
 type NewEntryScreenNavigationProp = StackNavigationProp<RootStackParamList, 'NewEntry'>;
 
@@ -26,9 +28,80 @@ interface NewEntryScreenProps {
 }
 
 const NewEntryScreen: React.FC<NewEntryScreenProps> = ({ navigation }) => {
-  const { supabase } = useSupabase();
+  const { supabase, spotifyTokens } = useSupabase();
   const [text, setText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [spotifyData, setSpotifyData] = useState<SpotifyListeningData | null>(null);
+  const [isLoadingSpotify, setIsLoadingSpotify] = useState(false);
+  const [isRefreshingSpotify, setIsRefreshingSpotify] = useState(false);
+
+  // Load Spotify data for today when component mounts
+  useEffect(() => {
+    if (spotifyTokens?.accessToken) {
+      loadSpotifyData();
+    }
+  }, [spotifyTokens]);
+
+  const loadSpotifyData = async () => {
+    if (!spotifyTokens?.accessToken) return;
+
+    setIsLoadingSpotify(true);
+    try {
+      // Create a Spotify service to fetch fresh data
+      const spotifyService = new SpotifyService(spotifyTokens.accessToken);
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Fetch fresh Spotify data for today
+      const freshSpotifyData = await spotifyService.getDailyListeningData(today);
+      
+      // Store the data in the database
+      if (supabase) {
+        const { data: spotifyDataResult, error: spotifyError } = await supabase
+          .from('spotify_listening_data')
+          .upsert({
+            date: freshSpotifyData.date,
+            total_tracks_played: freshSpotifyData.total_tracks_played,
+            total_minutes_listened: freshSpotifyData.total_minutes_listened,
+            top_tracks: freshSpotifyData.top_tracks,
+            top_artists: freshSpotifyData.top_artists,
+            top_genres: freshSpotifyData.top_genres,
+            listening_history: freshSpotifyData.listening_history,
+          }, {
+            onConflict: 'user_id,date'
+          })
+          .select()
+          .single();
+
+        if (spotifyError) {
+          console.warn('Failed to store Spotify data:', spotifyError);
+        } else {
+          // Use the stored data with proper ID
+          setSpotifyData({
+            ...freshSpotifyData,
+            id: spotifyDataResult.id,
+            user_id: spotifyDataResult.user_id,
+            created_at: spotifyDataResult.created_at,
+            updated_at: spotifyDataResult.updated_at,
+          });
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load Spotify data:', error);
+    } finally {
+      setIsLoadingSpotify(false);
+    }
+  };
+
+  const refreshSpotifyData = async () => {
+    if (!spotifyTokens?.accessToken || isRefreshingSpotify) return;
+    
+    setIsRefreshingSpotify(true);
+    try {
+      await loadSpotifyData();
+    } finally {
+      setIsRefreshingSpotify(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!text.trim()) {
@@ -48,7 +121,7 @@ const NewEntryScreen: React.FC<NewEntryScreenProps> = ({ navigation }) => {
 
     setIsSubmitting(true);
     try {
-      const journalService = new JournalService(supabase);
+      const journalService = new JournalService(supabase, spotifyTokens?.accessToken);
       await journalService.createEntry(text.trim());
       
       Alert.alert(
@@ -78,6 +151,8 @@ const NewEntryScreen: React.FC<NewEntryScreenProps> = ({ navigation }) => {
           errorMessage = 'Journal entry must be at least 10 characters long.';
         } else if (error.message.includes('OpenAI API')) {
           errorMessage = 'AI analysis service is temporarily unavailable. Please try again.';
+        } else if (error.message.includes('Spotify')) {
+          errorMessage = 'Spotify data will be included when available.';
         }
       }
       
@@ -109,6 +184,120 @@ const NewEntryScreen: React.FC<NewEntryScreenProps> = ({ navigation }) => {
     }
   };
 
+  const formatDuration = (minutes: number) => {
+    if (minutes < 60) {
+      return `${minutes}m`;
+    }
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+  };
+
+  const renderSpotifySection = () => {
+    if (!spotifyTokens?.accessToken) {
+      return (
+        <View style={styles.spotifySection}>
+          <View style={styles.spotifyHeader}>
+            <Ionicons name="musical-notes-outline" size={20} color="#1DB954" />
+            <Text style={styles.spotifyTitle}>Spotify Data</Text>
+          </View>
+          <Text style={styles.spotifyUnavailable}>
+            Connect your Spotify account to see your listening data
+          </Text>
+        </View>
+      );
+    }
+
+    if (isLoadingSpotify) {
+      return (
+        <View style={styles.spotifySection}>
+          <View style={styles.spotifyHeader}>
+            <Ionicons name="musical-notes-outline" size={20} color="#1DB954" />
+            <Text style={styles.spotifyTitle}>Today's Listening</Text>
+            <TouchableOpacity onPress={refreshSpotifyData} style={styles.refreshButton} disabled={isRefreshingSpotify}>
+              {isRefreshingSpotify ? (
+                <ActivityIndicator size="small" color="#1DB954" />
+              ) : (
+                <Ionicons name="refresh" size={16} color="#1DB954" />
+              )}
+            </TouchableOpacity>
+          </View>
+          <ActivityIndicator size="small" color="#1DB954" />
+        </View>
+      );
+    }
+
+    if (!spotifyData || spotifyData.total_tracks_played === 0) {
+      return (
+        <View style={styles.spotifySection}>
+          <View style={styles.spotifyHeader}>
+            <Ionicons name="musical-notes-outline" size={20} color="#1DB954" />
+            <Text style={styles.spotifyTitle}>Today's Listening</Text>
+            <TouchableOpacity onPress={refreshSpotifyData} style={styles.refreshButton} disabled={isRefreshingSpotify}>
+              {isRefreshingSpotify ? (
+                <ActivityIndicator size="small" color="#1DB954" />
+              ) : (
+                <Ionicons name="refresh" size={16} color="#1DB954" />
+              )}
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.spotifyUnavailable}>
+            No listening data available for today
+          </Text>
+          <TouchableOpacity onPress={loadSpotifyData} style={styles.retryButton}>
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.spotifySection}>
+        <View style={styles.spotifyHeader}>
+          <Ionicons name="musical-notes-outline" size={20} color="#1DB954" />
+          <Text style={styles.spotifyTitle}>Today's Listening</Text>
+          <TouchableOpacity onPress={refreshSpotifyData} style={styles.refreshButton} disabled={isRefreshingSpotify}>
+            {isRefreshingSpotify ? (
+              <ActivityIndicator size="small" color="#1DB954" />
+            ) : (
+              <Ionicons name="refresh" size={16} color="#1DB954" />
+            )}
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.spotifyStats}>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{spotifyData.total_tracks_played}</Text>
+            <Text style={styles.statLabel}>Tracks</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{formatDuration(spotifyData.total_minutes_listened)}</Text>
+            <Text style={styles.statLabel}>Listened</Text>
+          </View>
+        </View>
+
+        {spotifyData.top_tracks.length > 0 && (
+          <View style={styles.topTracksSection}>
+            <Text style={styles.sectionTitle}>Top Tracks Today</Text>
+            {spotifyData.top_tracks.slice(0, 3).map((track, index) => (
+              <View key={track.id} style={styles.trackItem}>
+                <Text style={styles.trackNumber}>{index + 1}</Text>
+                <View style={styles.trackInfo}>
+                  <Text style={styles.trackName}>{track.name}</Text>
+                  <Text style={styles.trackArtist}>{track.artist}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
+        <Text style={styles.lastUpdated}>
+          Last updated: {new Date(spotifyData.updated_at).toLocaleTimeString()}
+        </Text>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -137,6 +326,8 @@ const NewEntryScreen: React.FC<NewEntryScreenProps> = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
+          {renderSpotifySection()}
+
           <View style={styles.inputContainer}>
             <Text style={styles.label}>What's on your mind?</Text>
             <TextInput
@@ -157,9 +348,15 @@ const NewEntryScreen: React.FC<NewEntryScreenProps> = ({ navigation }) => {
 
           <View style={styles.infoContainer}>
             <View style={styles.infoItem}>
-              {/* <Ionicons name="sparkles-outline" size={20} color="#007AFF" /> */}
+              <Ionicons name="sparkles-outline" size={20} color="#007AFF" />
               <Text style={styles.infoText}>
                 Your entry will be automatically analyzed for sentiment and summarized
+              </Text>
+            </View>
+            <View style={styles.infoItem}>
+              <Ionicons name="musical-notes-outline" size={20} color="#1DB954" />
+              <Text style={styles.infoText}>
+                Your Spotify listening data will be included with this entry
               </Text>
             </View>
             <View style={styles.infoItem}>
@@ -228,6 +425,90 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '600',
   },
+  spotifySection: {
+    backgroundColor: 'white',
+    margin: 20,
+    marginBottom: 0,
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  spotifyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  spotifyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginLeft: 8,
+  },
+  spotifyUnavailable: {
+    fontSize: 14,
+    color: '#666',
+    fontStyle: 'italic',
+  },
+  spotifyStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 16,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1DB954',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
+  },
+  topTracksSection: {
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    paddingTop: 12,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  trackItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  trackNumber: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1DB954',
+    width: 20,
+  },
+  trackInfo: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  trackName: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+  },
+  trackArtist: {
+    fontSize: 12,
+    color: '#666',
+  },
   inputContainer: {
     flex: 1,
     padding: 20,
@@ -278,6 +559,29 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     flex: 1,
     lineHeight: 20,
+  },
+  refreshButton: {
+    padding: 5,
+    marginLeft: 10,
+  },
+  retryButton: {
+    marginTop: 10,
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#1DB954',
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  lastUpdated: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 10,
   },
 });
 
