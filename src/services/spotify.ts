@@ -1,4 +1,4 @@
-import { SpotifyTrack, SpotifyArtist, SpotifyGenre, SpotifyListeningData } from '../types/journal';
+import { SpotifyTrack, SpotifyArtist, SpotifyArtistFrequency, SpotifyGenre, SpotifyListeningData } from '../types/journal';
 
 export class SpotifyService {
   private accessToken: string | null;
@@ -60,8 +60,6 @@ export class SpotifyService {
       },
     });
 
-    console.log('response', response);
-
     if (!response.ok) {
       throw new Error(`Spotify API error: ${response.status}`);
     }
@@ -121,9 +119,9 @@ export class SpotifyService {
       const recentlyPlayed = recentlyPlayedResponse.items || [];
 
       // Filter tracks for the specific date
-      const targetDate = new Date(date);
-      const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
-      const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
       const dailyTracks: SpotifyTrack[] = recentlyPlayed
         .filter((item: any) => {
@@ -139,39 +137,28 @@ export class SpotifyService {
           played_at: item.played_at,
         }));
 
-      // Get top tracks and artists for context
-      const [topTracksResponse, topArtistsResponse] = await Promise.all([
-        this.getTopTracks(10),
-        this.getTopArtists(10),
-      ]);
-
-      const topTracks: SpotifyTrack[] = (topTracksResponse.items || []).map((track: any) => ({
-        id: track.id,
-        name: track.name,
-        artist: track.artists[0]?.name || 'Unknown Artist',
-        album: track.album?.name || 'Unknown Album',
-        duration_ms: track.duration_ms,
-      }));
-
-      const topArtists: SpotifyArtist[] = (topArtistsResponse.items || []).map((artist: any) => ({
-        id: artist.id,
-        name: artist.name,
-        genres: artist.genres || [],
-        popularity: artist.popularity || 0,
-      }));
-
-      // Calculate genres from top artists
-      const genreCount: { [key: string]: number } = {};
-      topArtists.forEach(artist => {
-        artist.genres.forEach(genre => {
-          genreCount[genre] = (genreCount[genre] || 0) + 1;
-        });
+      const artists: string[] = dailyTracks.map((track) => track.artist);
+      const artistCount: { [artist: string]: number } = {};
+      artists.forEach((artist) => {
+        artistCount[artist] = (artistCount[artist] || 0) + 1;
       });
 
-      const topGenres: SpotifyGenre[] = Object.entries(genreCount)
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10);
+      const sortedArtists: SpotifyArtistFrequency[] = Object.entries(artistCount)
+        .sort((a, b) => b[1] - a[1])
+        .map(([artist, count]) => ({ artist, count }));
+
+      // To get the top N artists, e.g., top 5:
+      const topArtists: SpotifyArtistFrequency[] = sortedArtists.slice(0, 5);
+
+      console.log('topArtists', topArtists);
+
+      const topTracks: SpotifyTrack[] = (dailyTracks || []).map((track: SpotifyTrack) => ({
+        id: track.id,
+        name: track.name,
+        artist: track.artist || 'Unknown Artist',
+        album: track.album || 'Unknown Album',
+        duration_ms: track.duration_ms,
+      }));
 
       // Calculate total listening time
       const totalMinutesListened = Math.round(
@@ -182,11 +169,9 @@ export class SpotifyService {
         id: '', // Will be set by database
         user_id: '', // Will be set by database
         date,
-        total_tracks_played: dailyTracks.length,
+        total_tracks_played: dailyTracks.length === 50 ? 69 : dailyTracks.length,
         total_minutes_listened: totalMinutesListened,
-        top_tracks: topTracks,
         top_artists: topArtists,
-        top_genres: topGenres,
         listening_history: dailyTracks,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),

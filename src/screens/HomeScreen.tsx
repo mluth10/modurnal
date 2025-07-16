@@ -432,7 +432,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     fontStyle: 'italic',
   },
   listContainer: {
-    padding: 20,
+    padding: 10,
   },
   spotifyDataSection: {
     marginTop: 16,

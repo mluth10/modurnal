@@ -41,9 +41,7 @@ export class JournalService {
                 date: spotifyData.date,
                 total_tracks_played: spotifyData.total_tracks_played,
                 total_minutes_listened: spotifyData.total_minutes_listened,
-                top_tracks: spotifyData.top_tracks,
                 top_artists: spotifyData.top_artists,
-                top_genres: spotifyData.top_genres,
                 listening_history: spotifyData.listening_history,
               }, {
                 onConflict: 'user_id,date'

@@ -6,7 +6,7 @@ import { makeRedirectUri } from 'expo-auth-session';
 import { AuthService } from '../services/auth';
 
 // Complete the auth session
-WebBrowser.maybeCompleteAuthSession();
+// WebBrowser.maybeCompleteAuthSession();
 
 interface SupabaseContextType {
   supabase: SupabaseClient | null;
@@ -66,21 +66,23 @@ export const SupabaseProvider: React.FC<SupabaseProviderProps> = ({ children }) 
           return;
         }
 
-        const client = createClient(supabaseUrl, supabaseAnonKey, {
-          auth: {
-            storage: {
-              async getItem(key: string) {
-                return await SecureStore.getItemAsync(key);
-              },
-              async setItem(key: string, value: string) {
-                await SecureStore.setItemAsync(key, value);
-              },
-              async removeItem(key: string) {
-                await SecureStore.deleteItemAsync(key);
-              },
-            },
-          },
-        });
+        const client = createClient(supabaseUrl, supabaseAnonKey);
+
+        // const client = createClient(supabaseUrl, supabaseAnonKey, {
+        //   auth: {
+        //     storage: {
+        //       async getItem(key: string) {
+        //         return await SecureStore.getItemAsync(key);
+        //       },
+        //       async setItem(key: string, value: string) {
+        //         await SecureStore.setItemAsync(key, value);
+        //       },
+        //       async removeItem(key: string) {
+        //         await SecureStore.deleteItemAsync(key);
+        //       },
+        //     },
+        //   },
+        // });
 
         setSupabase(client);
         setAuthService(new AuthService(client));
@@ -125,7 +127,6 @@ export const SupabaseProvider: React.FC<SupabaseProviderProps> = ({ children }) 
       if (error) {
         return { error };
       }
-      console.log('data:', data);
       // Handle the OAuth flow for React Native
       if (data?.url) {
         console.log('OAuth URL:', data.url);

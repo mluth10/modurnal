@@ -14,6 +14,11 @@ export interface SpotifyArtist {
   popularity: number;
 }
 
+export interface SpotifyArtistFrequency {
+  artist: string;
+  count: number;
+}
+
 export interface SpotifyGenre {
   name: string;
   count: number;
@@ -25,9 +30,7 @@ export interface SpotifyListeningData {
   date: string;
   total_tracks_played: number;
   total_minutes_listened: number;
-  top_tracks: SpotifyTrack[];
-  top_artists: SpotifyArtist[];
-  top_genres: SpotifyGenre[];
+  top_artists: SpotifyArtistFrequency[];
   listening_history: SpotifyTrack[];
   created_at: string;
   updated_at: string;

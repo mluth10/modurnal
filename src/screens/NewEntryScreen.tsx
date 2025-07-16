@@ -11,6 +11,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import { Avatar, Button, Card } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -50,10 +51,10 @@ const NewEntryScreen: React.FC<NewEntryScreenProps> = ({ navigation }) => {
       // Create a Spotify service to fetch fresh data
       const spotifyService = new SpotifyService(spotifyTokens.accessToken);
       const today = new Date().toISOString().split('T')[0];
-      
+
       // Fetch fresh Spotify data for today
       const freshSpotifyData = await spotifyService.getDailyListeningData(today);
-      
+
       // Store the data in the database
       if (supabase) {
         const { data: spotifyDataResult, error: spotifyError } = await supabase
@@ -62,9 +63,7 @@ const NewEntryScreen: React.FC<NewEntryScreenProps> = ({ navigation }) => {
             date: freshSpotifyData.date,
             total_tracks_played: freshSpotifyData.total_tracks_played,
             total_minutes_listened: freshSpotifyData.total_minutes_listened,
-            top_tracks: freshSpotifyData.top_tracks,
             top_artists: freshSpotifyData.top_artists,
-            top_genres: freshSpotifyData.top_genres,
             listening_history: freshSpotifyData.listening_history,
           }, {
             onConflict: 'user_id,date'
@@ -94,7 +93,7 @@ const NewEntryScreen: React.FC<NewEntryScreenProps> = ({ navigation }) => {
 
   const refreshSpotifyData = async () => {
     if (!spotifyTokens?.accessToken || isRefreshingSpotify) return;
-    
+
     setIsRefreshingSpotify(true);
     try {
       await loadSpotifyData();
@@ -123,7 +122,7 @@ const NewEntryScreen: React.FC<NewEntryScreenProps> = ({ navigation }) => {
     try {
       const journalService = new JournalService(supabase, spotifyTokens?.accessToken);
       await journalService.createEntry(text.trim());
-      
+
       Alert.alert(
         'Success',
         'Journal entry created successfully!',
@@ -139,9 +138,9 @@ const NewEntryScreen: React.FC<NewEntryScreenProps> = ({ navigation }) => {
       );
     } catch (error) {
       console.error('Error creating journal entry:', error);
-      
+
       let errorMessage = 'Failed to create journal entry. Please try again.';
-      
+
       if (error instanceof Error) {
         if (error.message.includes('rate limit')) {
           errorMessage = 'OpenAI is currently busy. Please try again in a moment.';
@@ -155,7 +154,7 @@ const NewEntryScreen: React.FC<NewEntryScreenProps> = ({ navigation }) => {
           errorMessage = 'Spotify data will be included when available.';
         }
       }
-      
+
       Alert.alert('Error', errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -264,7 +263,7 @@ const NewEntryScreen: React.FC<NewEntryScreenProps> = ({ navigation }) => {
             )}
           </TouchableOpacity>
         </View>
-        
+
         <View style={styles.spotifyStats}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{spotifyData.total_tracks_played}</Text>
@@ -276,20 +275,19 @@ const NewEntryScreen: React.FC<NewEntryScreenProps> = ({ navigation }) => {
           </View>
         </View>
 
-        {spotifyData.top_tracks.length > 0 && (
-          <View style={styles.topTracksSection}>
-            <Text style={styles.sectionTitle}>Top Tracks Today</Text>
-            {spotifyData.top_tracks.slice(0, 3).map((track, index) => (
-              <View key={track.id} style={styles.trackItem}>
-                <Text style={styles.trackNumber}>{index + 1}</Text>
-                <View style={styles.trackInfo}>
-                  <Text style={styles.trackName}>{track.name}</Text>
-                  <Text style={styles.trackArtist}>{track.artist}</Text>
-                </View>
+        <View style={styles.topArtistsSection}>
+          <Text style={styles.topArtistsTitle}>Top Artists</Text>
+          {spotifyData.top_artists && spotifyData.top_artists.length > 0 ? (
+            spotifyData.top_artists.map((artist, idx) => (
+              <View key={artist.artist + idx} style={styles.topArtistItem}>
+                <Text style={styles.topArtistName}>{artist.artist}</Text>
+                <Text style={styles.topArtistCount}>{artist.count} play{artist.count !== 1 ? 's' : ''}</Text>
               </View>
-            ))}
-          </View>
-        )}
+            ))
+          ) : (
+            <Text style={styles.noTopArtistsText}>No top artists found for today.</Text>
+          )}
+        </View>
 
         <Text style={styles.lastUpdated}>
           Last updated: {new Date(spotifyData.updated_at).toLocaleTimeString()}
@@ -576,6 +574,44 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  // --- Added styles for Top Artists section ---
+  topArtistsSection: {
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    paddingTop: 12,
+    marginTop: 12,
+  },
+  topArtistsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  topArtistItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  topArtistName: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  topArtistCount: {
+    fontSize: 13,
+    color: '#666',
+    fontStyle: 'italic',
+  },
+  noTopArtistsText: {
+    fontSize: 14,
+    color: '#999',
+    fontStyle: 'italic',
+    marginTop: 8,
+    textAlign: 'center',
   },
   lastUpdated: {
     fontSize: 12,
